@@ -25,6 +25,24 @@ async function processMessage(queueMsg) {
   });
   console.log("del_data", del_data, del_error);
 }
+async function processMessagesConcurrently(msgs) {
+  const results = await Promise.allSettled(msgs.map((msg)=>processMessage(msg)));
+  const failedMsgs = results.map((result, index)=>{
+    if (result.status === 'rejected') {
+      return {
+        queueMsg: msgs[index],
+        processingError: result.reason,
+        at: new Date().toISOString()
+      };
+    }
+    return null;
+  }).filter((x)=>x !== null);
+  // Optionally log them
+  failedMsgs.forEach((f)=>console.error('processMessage failed for msg:', f.queueMsg, 'error:', f.processingError));
+  return {
+    failedMsgs
+  };
+}
 Deno.serve(async (req)=>{
   // const result = await supabase.schema('pgmq').rpc('pop', {
   //   queue_name: queueName
@@ -38,19 +56,21 @@ Deno.serve(async (req)=>{
   });
   const msgs = data;
   console.log("msgs", msgs);
-  const failedMsgs = [];
-  for (const msg of msgs){
-    try {
-      await processMessage(msg);
-    } catch (err) {
-      failedMsgs.push({
-        queueMg: msg,
-        processingError: err,
-        at: new Date().toISOString()
-      });
-      console.error('processMessage failed for msg:', msg, 'error:', err);
-    }
-  }
+  const { failedMsgs } = await processMessagesConcurrently(msgs);
+  console.log("failedMsgs", failedMsgs.toString());
+  // const failedMsgs = [];
+  // for (const msg of msgs){
+  //   try {
+  //     await processMessage(msg);
+  //   } catch (err) {
+  //     failedMsgs.push({
+  //       queueMg: msg,
+  //       processingError: err,
+  //       at: new Date().toISOString()
+  //     });
+  //     console.error('processMessage failed for msg:', msg, 'error:', err);
+  //   }
+  // }
   // Return if no msg in queue
   // if (!msgs || msgs.length === 0) {
   //   console.log('No messages in workflow_messages queue');
