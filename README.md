@@ -29,15 +29,48 @@ It includes example endpoints for common patterns (auth-protected requests, serv
 
 ## Features
 
-- Example server-side Supabase queries and inserts
-- Environment and deployment guidance
+### Photo Upload + Prompt (Supabase Edge Function)
+A lightweight HTTP POST endpoint that:
+
+1. accepts a base64 image and prompt,
+2. stores the image in Supabase Storage,
+3. records metadata in the photos table, and
+3. enqueues the new photo in pgmq for downstream generation.
+
+### Request
+JSON body
+```
+{
+  "image_data": "data:image/jpeg;base64,/9j/4AAQ...", 
+  "prompt": "Make it look like watercolor",
+  "user_id": "e0d1234a-56b7-4a89-9f10-1ab2cd345678",
+  "theme_id": 42
+}
+```
+
+Response
+```
+{
+  "success": true,
+  "photo": {
+    "id": 123,
+    "user_id": "e0d1234a-56b7-4a89-9f10-1ab2cd345678",
+    "original_image": "https://<project>.supabase.co/storage/v1/object/public/photos/original/...",
+    "prompt": "Make it look like watercolor",
+    "theme_id": 42,
+    "generated_image": null,
+    "status": "loading",
+  },
+  "message_id": 98765,
+  "message": "Photo uploaded successfully"
+}
+```
 
 ---
 
 ## Tech stack
 
 - Supabase (Database + Storage)
-- TypeScript (repo may contain either)
-- Edge runtime compatible client (the official @supabase/supabase-js works in many edge runtimes; use light-weight client options if needed)
+- TypeScript
 
 ---
