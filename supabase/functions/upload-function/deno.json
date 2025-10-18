@@ -1,9 +1,11 @@
 {
   "imports": {
-    "@supabase/functions-js": "npm:@supabase/functions-js@2.4.1"
+    "@supabase/functions-js": "jsr:@supabase/functions-js@2.4.1",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.39.3"
   },
   "dependencies": {
-    "@supabase/functions-js": "npm:@supabase/functions-js@2.4.1"
+    "@supabase/functions-js": "jsr:@supabase/functions-js@2.4.1",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.39.3"
   },
   "compilerOptions": {
     "allowJs": true,
