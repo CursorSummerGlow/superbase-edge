@@ -46,7 +46,6 @@ Deno.serve(async (req) => {
       imageBuffer = Uint8Array.from(atob(image_data), (c) => c.charCodeAt(0));
     }
 
-    const queueName = "generate-queue";
     const supabaseClient = createClient(
       // Supabase API URL - env var exported by default.
       Deno.env.get("SUPABASE_URL")!,
@@ -97,12 +96,14 @@ Deno.serve(async (req) => {
     }
 
     // After record saved, send photo id to pgmq for processing
-    const res = await supabaseClient.schema("pgmq").rpc("send", {
-      queue_name: queueName,
-      message: { "photo_id": photoData.id },
-    });
+    const { data: msgId, error: sendError } = await supabaseClient
+      .schema("pgmq")
+      .rpc("send", {
+        queue_name: "a_generate-queue",
+        message: { photo_id: photoData.id },
+      });
 
-    if (!res) {
+    if (!sendError) {
       console.error("Queue error");
       return new Response("Failed to queue record for processing", {
         status: 500,
@@ -113,6 +114,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         photo: photoData,
+        message_id: msgId,
         message: "Photo uploaded successfully",
       }),
       {
