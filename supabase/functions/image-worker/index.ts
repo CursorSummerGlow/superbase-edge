@@ -43,12 +43,14 @@ async function processMessagesConcurrently(msgs) {
     failedMsgs
   };
 }
+async function task(queue_msgs) {
+  console.log("running from task");
+  await new Promise((f)=>setTimeout(f, 8000));
+  const { failedMsgs } = await processMessagesConcurrently(queue_msgs);
+  console.log("failedMsgs", failedMsgs.toString());
+  console.log("finish task");
+}
 Deno.serve(async (req)=>{
-  // const result = await supabase.schema('pgmq').rpc('pop', {
-  //   queue_name: queueName
-  // });
-  // console.log("HELLOOOO?????", queueName, result);
-  // Poll from the queue
   const { data, error } = await supabase.schema('pgmq').rpc('read', {
     queue_name: queueName,
     vt: 5,
@@ -56,8 +58,13 @@ Deno.serve(async (req)=>{
   });
   const msgs = data;
   console.log("msgs", msgs);
-  const { failedMsgs } = await processMessagesConcurrently(msgs);
-  console.log("failedMsgs", failedMsgs.toString());
+  EdgeRuntime.waitUntil(task(msgs));
+  // const result = await supabase.schema('pgmq').rpc('pop', {
+  //   queue_name: queueName
+  // });
+  // console.log("HELLOOOO?????", queueName, result);
+  // Poll from the queue
+  //
   // const failedMsgs = [];
   // for (const msg of msgs){
   //   try {
