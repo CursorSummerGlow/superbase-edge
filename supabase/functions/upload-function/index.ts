@@ -12,17 +12,39 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const formData = await req.formData();
-    const file = formData.get("image_data") as File;
-    const prompt = formData.get("prompt") as string;
-    const user_id = formData.get("user_id") as string;
+    const body = await req.json();
+    const { image_data, prompt, user_id } = body;
 
-    if (!file) {
-      return new Response("Missing image file", { status: 400 });
+    if (!image_data) {
+      return new Response("Missing image data", { status: 400 });
     }
 
     if (!prompt) {
       return new Response("Missing prompt", { status: 400 });
+    }
+
+    // Validate UUID format, if invalid or empty, set to null
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const validUserId = user_id && uuidRegex.test(user_id) ? user_id : null;
+
+    // Convert base64 to buffer
+    let imageBuffer: Uint8Array;
+    let contentType = "image/jpeg"; // default
+    let fileExtension = "jpg";
+
+    if (image_data.startsWith("data:image/")) {
+      // Handle data URL format: data:image/jpeg;base64,/9j/4AAQ...
+      const [header, base64Data] = image_data.split(",");
+      const mimeMatch = header.match(/data:image\/([a-zA-Z]*)/);
+      if (mimeMatch) {
+        contentType = `image/${mimeMatch[1]}`;
+        fileExtension = mimeMatch[1];
+      }
+      imageBuffer = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+    } else {
+      // Handle raw base64 string
+      imageBuffer = Uint8Array.from(atob(image_data), (c) => c.charCodeAt(0));
     }
 
     const supabaseClient = createClient(
@@ -46,11 +68,13 @@ Deno.serve(async (req) => {
     // }
 
     // Upload original image to Storage
-    const uploadPath = `original/${user_id}/${file.name}`;
+    const timestamp = +new Date();
+    const fileName = `image-${timestamp}.${fileExtension}`;
+    const uploadPath = `original/${validUserId || "anonymous"}/${fileName}`;
     const { data: upload, error: uploadError } = await supabaseClient.storage
       .from("photos")
-      .upload(uploadPath, file, {
-        contentType: file.type,
+      .upload(uploadPath, imageBuffer, {
+        contentType: contentType,
         cacheControl: "3600",
         upsert: false,
       });
@@ -69,7 +93,7 @@ Deno.serve(async (req) => {
     const { data: photoData, error: dbError } = await supabaseClient
       .from("photos")
       .insert({
-        user_id: user_id,
+        user_id: validUserId,
         original_image: publicUrl,
         prompt: prompt,
         // generated_image will be null initially, can be updated later
