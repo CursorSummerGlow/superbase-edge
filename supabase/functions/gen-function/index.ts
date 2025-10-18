@@ -2,7 +2,7 @@
  * Edge Function for generating images with Google GenAI (Gemini) or returning placeholder images.
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
 
 // Import Supabase Edge Runtime type definitions
 import "@supabase/functions-js/edge-runtime";
@@ -49,10 +49,8 @@ Deno.serve(async (req) => {
       return new Response("Missing prompt", { status: 400 });
     }
 
-    // Initialize Google GenAI
-    const ai = new GoogleGenAI({
-      apiKey: Deno.env.get("GEMINI_API_KEY")!,
-    });
+    // Initialize Google Generative AI
+    const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY")!);
 
     let response;
     let generatedImageUrl = "";
@@ -61,20 +59,16 @@ Deno.serve(async (req) => {
       // Test 1: Single image generation with text prompt only
       console.log("Testing single image generation...");
 
-      response = await ai.models.generateContent({
+      const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash-image",
-        contents: [
-          {
-            text:
-              `Create an image based on this prompt: "${prompt}". Make it a high-quality, detailed image.`,
-          },
-        ],
-        config: {
-          imageConfig: {
-            aspectRatio: "1:1",
-          },
-        },
       });
+
+      response = await model.generateContent([
+        {
+          text:
+            `Create an image based on this prompt: "${prompt}". Make it a high-quality, detailed image.`,
+        },
+      ]);
     } else if (test_type === "multi") {
       // Test 2: Multiple placeholder images + text prompt
       console.log("Testing multi-image generation...");
@@ -82,6 +76,10 @@ Deno.serve(async (req) => {
       // Create placeholder images
       const womanImage = createPlaceholderImage(400, 400, "#4A90E2", "Woman");
       const logoImage = createPlaceholderImage(200, 200, "#E24A4A", "Logo");
+
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash-image",
+      });
 
       const promptContent = [
         {
@@ -102,15 +100,7 @@ Deno.serve(async (req) => {
         },
       ];
 
-      response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-image",
-        contents: promptContent,
-        config: {
-          imageConfig: {
-            aspectRatio: "1:1",
-          },
-        },
-      });
+      response = await model.generateContent(promptContent);
     } else if (test_type === "style_transfer") {
       // Test 3: Style transfer with placeholder
       console.log("Testing style transfer...");
@@ -122,6 +112,10 @@ Deno.serve(async (req) => {
         "#32CD32",
         "Content",
       );
+
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash-image",
+      });
 
       const promptContent = [
         {
@@ -142,15 +136,7 @@ Deno.serve(async (req) => {
         },
       ];
 
-      response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-image",
-        contents: promptContent,
-        config: {
-          imageConfig: {
-            aspectRatio: "1:1",
-          },
-        },
-      });
+      response = await model.generateContent(promptContent);
     } else {
       return new Response(
         "Invalid test_type. Use 'single', 'multi', or 'style_transfer'",
@@ -167,7 +153,7 @@ Deno.serve(async (req) => {
       text_responses: [] as string[],
     };
 
-    for (const part of response.candidates[0].content.parts) {
+    for (const part of response.response.candidates[0].content.parts) {
       if (part.text) {
         console.log("Text response:", part.text);
         result.text_responses.push(part.text);
