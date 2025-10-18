@@ -1,5 +1,4 @@
 // Upload function for photos with prompt to Supabase Storage and database
-
 import { createClient } from "@supabase/supabase-js";
 
 // Setup type definitions for built-in Supabase Runtime APIs
@@ -13,7 +12,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { image_data, prompt, user_id } = body;
+    const { image_data, prompt, user_id, theme_id } = body;
 
     if (!image_data) {
       return new Response("Missing image data", { status: 400 });
@@ -54,19 +53,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Get the user ID from the JWT token
-    // const authHeader = req.headers.get("Authorization");
-    // let userId = null;
-
-    // if (authHeader) {
-    //   const token = authHeader.replace("Bearer ", "");
-    //   const { data: { user }, error: authError } = await supabaseClient.auth
-    //     .getUser(token);
-    //   if (!authError && user) {
-    //     userId = user.id;
-    //   }
-    // }
-
     // Upload original image to Storage
     const timestamp = +new Date();
     const fileName = `image-${timestamp}.${fileExtension}`;
@@ -96,6 +82,7 @@ Deno.serve(async (req) => {
         user_id: validUserId,
         original_image: publicUrl,
         prompt: prompt,
+        theme_id: theme_id,
         // generated_image will be null initially, can be updated later
         generated_image: null,
         status: "loading",
