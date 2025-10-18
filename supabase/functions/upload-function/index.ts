@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         message: { photo_id: photoData.id },
       });
 
-    if (!sendError) {
+    if (sendError) {
       console.error("Queue error");
       return new Response("Failed to queue record for processing", {
         status: 500,
