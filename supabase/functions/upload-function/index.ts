@@ -28,8 +28,8 @@ Deno.serve(async (req) => {
     const supabaseClient = createClient(
       // Supabase API URL - env var exported by default.
       Deno.env.get("SUPABASE_URL")!,
-      // Supabase API ANON KEY - env var exported by default.
-      Deno.env.get("SUPABASE_ANON_KEY")!,
+      // Use service role key to bypass RLS
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     // Get the user ID from the JWT token
