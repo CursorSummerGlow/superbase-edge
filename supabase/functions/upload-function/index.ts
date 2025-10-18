@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       });
 
     if (sendError) {
-      console.error("Queue error");
+      console.error("Queue error: ", sendError);
       return new Response("Failed to queue record for processing", {
         status: 500,
       });
