@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
     const { data: msgId, error: sendError } = await supabaseClient
       .schema("pgmq")
       .rpc("send", {
-        queue_name: "a_generate-queue",
+        queue_name: "generate-queue",
         message: { photo_id: photoData.id },
       });
 
