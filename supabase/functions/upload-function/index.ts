@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
         prompt: prompt,
         // generated_image will be null initially, can be updated later
         generated_image: null,
+        status: "loading",
       })
       .select()
       .single();
