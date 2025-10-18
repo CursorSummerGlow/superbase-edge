@@ -38,8 +38,18 @@ Deno.serve(async (req)=>{
   });
   const msgs = data;
   console.log("msgs", msgs);
+  const failedMsgs = [];
   for (const msg of msgs){
-    await processMessage(msg);
+    try {
+      await processMessage(msg);
+    } catch (err) {
+      failedMsgs.push({
+        queueMg: msg,
+        processingError: err,
+        at: new Date().toISOString()
+      });
+      console.error('processMessage failed for msg:', msg, 'error:', err);
+    }
   }
   // Return if no msg in queue
   // if (!msgs || msgs.length === 0) {
