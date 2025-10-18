@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
       .schema("pgmq")
       .rpc("send", {
         queue_name: "generate-queue",
-        message: { photo_id: photoData.id },
+        msg: { photo_id: photoData.id },
       });
 
     if (sendError) {
