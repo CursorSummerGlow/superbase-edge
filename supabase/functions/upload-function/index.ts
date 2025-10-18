@@ -13,8 +13,9 @@ Deno.serve(async (req) => {
 
   try {
     const formData = await req.formData();
-    const file = formData.get("image") as File;
+    const file = formData.get("image_data") as File;
     const prompt = formData.get("prompt") as string;
+    const user_id = formData.get("user_id") as string;
 
     if (!file) {
       return new Response("Missing image file", { status: 400 });
@@ -32,17 +33,17 @@ Deno.serve(async (req) => {
     );
 
     // Get the user ID from the JWT token
-    const authHeader = req.headers.get("Authorization");
-    let userId = null;
+    // const authHeader = req.headers.get("Authorization");
+    // let userId = null;
 
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user }, error: authError } = await supabaseClient.auth
-        .getUser(token);
-      if (!authError && user) {
-        userId = user.id;
-      }
-    }
+    // if (authHeader) {
+    //   const token = authHeader.replace("Bearer ", "");
+    //   const { data: { user }, error: authError } = await supabaseClient.auth
+    //     .getUser(token);
+    //   if (!authError && user) {
+    //     userId = user.id;
+    //   }
+    // }
 
     // Upload original image to Storage
     const timestamp = +new Date();
@@ -69,7 +70,7 @@ Deno.serve(async (req) => {
     const { data: photoData, error: dbError } = await supabaseClient
       .from("photos")
       .insert({
-        user_id: userId,
+        user_id: user_id,
         original_image: publicUrl,
         prompt: prompt,
         // generated_image will be null initially, can be updated later
