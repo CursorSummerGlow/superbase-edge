@@ -46,11 +46,10 @@ Deno.serve(async (req) => {
     // }
 
     // Upload original image to Storage
-    const timestamp = +new Date();
-    const uploadName = `original-${timestamp}-${file.name}`;
+    const uploadPath = `original/${user_id}/${file.name}`;
     const { data: upload, error: uploadError } = await supabaseClient.storage
       .from("photos")
-      .upload(uploadName, file, {
+      .upload(uploadPath, file, {
         contentType: file.type,
         cacheControl: "3600",
         upsert: false,
